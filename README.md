@@ -1,11 +1,12 @@
 # 4 KB-ROM-Memory-with-Read-and-Write-Operations
-Aim
+# Aim
 To design and simulate a 4KB ROM memory with read and write operations using Verilog HDL and verify the functionality through a testbench in the Vivado 2023.1 simulation environment.
 
-Apparatus Required
+# Apparatus Required
 Vivado 2023.1 or equivalent Verilog simulation tool.
 Computer system with a suitable operating system.
-Procedure
+
+# Procedure
 Launch Vivado 2023.1:
 
 Open Vivado and create a new project.
@@ -27,95 +28,314 @@ Analyze the waveform to verify that the memory read and write operations work as
 Save and Document Results:
 
 Capture the waveform and include the simulation results in the final report.
-Verilog Code for 4KB ROM Memory with Read and Write Operations
-In this design, we will implement a 4KB ROM. Since ROM is typically read-only, we will simulate the behavior as if it's writable, but in actual hardware, ROM is typically pre-programmed.
 
-4KB = 4096 Bytes = 4096 x 8 bits
-The address width for 4KB memory is 12 bits (2^12 = 4096).
+# Verilog Code for Rom
+```
+module rom_mem(input clk,rst,input[9:0] address,output reg[7:0] data_out);
 
+reg [7:0] rom_mem[1023:0];
 
-// rom_memory.v
-module rom_memory (
-    input wire clk,
-    input wire write_enable,   // Signal to enable write operation
-    input wire [11:0] address, // 12-bit address for 4KB memory
-    input wire [7:0] data_in,  // Data to write into ROM
-    output reg [7:0] data_out  // Data read from ROM
+initial begin
+rom_mem[0]=8'h1A;
+rom_mem[1]=8'h2A;
+rom_mem[2]=8'h3A;
+rom_mem[3]=8'h92;
+rom_mem[4]=8'h5E;
+rom_mem[5]=8'h6F;
+rom_mem[6]=8'h70;
+
+end
+
+always@(posedge clk) 
+begin
+
+if(rst)
+
+data_out <= 8'b0;
+
+else
+
+data_out <= rom_mem[address];
+
+end
+
+endmodule
+```
+# Testbench code for ROM
+```
+module rom_design_tb;
+reg clk, rst;
+reg [2:0] address;
+wire [3:0] dataout;
+
+rom_design uut (
+  .clk(clk),
+  .rst(rst),
+  .address(address),
+  .dataout(dataout)
 );
 
-    // Declare ROM with 4096 memory locations (each 8 bits wide)
-    reg [7:0] rom[0:4095];
+initial begin
+  clk = 1'b0;
+  forever #5 clk = ~clk;
+end
 
-    always @(posedge clk) begin
-        if (write_enable) begin
-            // Write operation: Write data into the ROM at the given address
-            rom[address] <= data_in;
-        end
-        // Read operation: Read data from the ROM at the given address
-        data_out <= rom[address];
-    end
-endmodule
-
-
-Testbench for 4KB ROM Memory
-
-// rom_memory_tb.v
-`timescale 1ns / 1ps
-
-module rom_memory_tb;
-
-    // Inputs
-    reg clk;
-    reg write_enable;
-    reg [11:0] address;
-    reg [7:0] data_in;
-
-    // Outputs
-    wire [7:0] data_out;
-
-    // Instantiate the ROM module
-    rom_memory uut (
-        .clk(clk),
-        .write_enable(write_enable),
-        .address(address),
-        .data_in(data_in),
-        .data_out(data_out)
-    );
-
-    // Clock generation
-    always #5 clk = ~clk;  // Toggle clock every 5 ns
-
-    // Test procedure
-    initial begin
-        // Initialize inputs
-        clk = 0;
-        write_enable = 0;
-        address = 0;
-        data_in = 0;
-
-        // Write data into memory
-        #10 write_enable = 1; address = 12'd0; data_in = 8'hA5;  // Write 0xA5 at address 0
-        #10 write_enable = 1; address = 12'd1; data_in = 8'h5A;  // Write 0x5A at address 1
-        #10 write_enable = 1; address = 12'd2; data_in = 8'hFF;  // Write 0xFF at address 2
-        #10 write_enable = 1; address = 12'd3; data_in = 8'h00;  // Write 0x00 at address 3
-
-        // Disable write and start reading from memory
-        #10 write_enable = 0; address = 12'd0;
-        #10 address = 12'd1;
-        #10 address = 12'd2;
-        #10 address = 12'd3;
-
-        // Stop the simulation
-        #10 $stop;
-    end
-
-    // Monitor the values for verification
-    initial begin
-        $monitor("Time = %0t | Write Enable = %b | Address = %h | Data In = %h | Data Out = %h", 
-                 $time, write_enable, address, data_in, data_out);
-    end
+initial begin
+  rst = 1'b1;
+  address = 3'b000;
+  
+  // Reset assertion
+  #10 rst = 1'b0;
+  
+  // Test address 0
+  #10 address = 3'b000;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 1
+  #10 address = 3'b001;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 2
+  #10 address = 3'b010;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 4
+  #10 address = 3'b100;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 5
+  #10 address = 3'b101;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 6
+  #10 address = 3'b110;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 7
+  #10 address = 3'b111;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test reset
+  #10 rst = 1'b1;
+  #10 $display("Reset asserted, Dataout: %d", dataout);
+end
 
 endmodule
+```
+# Output
+![Screenshot 2025-05-03 135802](https://github.com/user-attachments/assets/bb1b925e-83ae-4d00-82c1-094b2b2c3e84)
+  
+# Verilog code for RAM
+```
+module ram_memory(input clk,rst,
+input[7:0] data_in,input wr_en,input[9:0] address,
+output reg[7:0] data_out);
+reg[7:0] ram_memory[1023:0];
+always@(posedge clk)
+ begin 
+  if(rst)
+     data_out <= 8'b0;
+    else if(wr_en)
+    ram_memory[address] <= data_in;
+    else
+    data_out <= ram_memory[address];
+    end
+endmodule
+```
+# Testbench code for RAM
+```
+module rom_design_tb;
+reg clk, rst;
+reg [2:0] address;
+wire [3:0] dataout;
+
+rom_design uut (
+  .clk(clk),
+  .rst(rst),
+  .address(address),
+  .dataout(dataout)
+);
+
+initial begin
+  clk = 1'b0;
+  forever #5 clk = ~clk;
+end
+
+initial begin
+  rst = 1'b1;
+  address = 3'b000;
+  
+  // Reset assertion
+  #10 rst = 1'b0;
+  
+  // Test address 0
+  #10 address = 3'b000;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 1
+  #10 address = 3'b001;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 2
+  #10 address = 3'b010;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 4
+  #10 address = 3'b100;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 5
+  #10 address = 3'b101;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 6
+  #10 address = 3'b110;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test address 7
+  #10 address = 3'b111;
+  #10 $display("Address: %d, Dataout: %d", address, dataout);
+  
+  // Test reset
+  #10 rst = 1'b1;
+  #10 $display("Reset asserted, Dataout: %d", dataout);
+end
+
+endmodule
+```
+# Output
+![Screenshot 2025-05-03 142532](https://github.com/user-attachments/assets/651f7d2f-b7ab-4eba-83c4-9d86446837d5)
+# Verilog code for FIFO
+```
+module fifo_8 #(parameter depth = 8, data_width = 8)
+  (input  clk, rst, 
+   input    w_en, r_en,
+   input   [data_width-1:0] data_in,
+   output  reg [data_width-1:0] data_out,
+   output  full, empty);
+
+reg [$clog2(depth)-1:0] w_ptr, r_ptr;
+reg [data_width-1:0] fifo [depth-1:0];  // Adjusted array bounds
+
+always @(posedge clk) begin
+  if (!rst) begin
+    w_ptr <= 0;
+    r_ptr <= 0;
+    data_out <= 0;
+  end
+end
+
+always @(posedge clk) begin
+  if (w_en && !full) begin
+    fifo[w_ptr] <= data_in;
+    w_ptr <= w_ptr + 1;  // Pointer wrap-around
+  end
+end
+
+always @(posedge clk) begin
+  if (r_en && !empty) begin
+    data_out <= fifo[r_ptr];  // Corrected read data assignment
+    r_ptr <= r_ptr + 1;  // Pointer wrap-around
+  end
+end
+
+assign full = (w_ptr + 1 == r_ptr);
+assign empty = (w_ptr == r_ptr);
+
+
+
+
+endmodule
+```
+# Testbench code for FIFO
+```
+module fifo_8_tb;
+reg clk, rst;
+reg w_en, r_en;
+reg [7:0] data_in;
+wire [7:0] data_out;
+wire full, empty;
+
+fifo_8 #(.depth(8), .data_width(8)) uut (
+    .clk(clk),
+    .rst(rst),
+    .w_en(w_en),
+    .r_en(r_en),
+    .data_in(data_in),
+    .data_out(data_out),
+    .full(full),
+    .empty(empty)
+);
+
+initial begin
+    clk = 1'b0;
+    forever #5 clk = ~clk;
+end
+
+initial begin
+    rst = 1'b1;
+    w_en = 1'b0;
+    r_en = 1'b0;
+    data_in = 8'd0;
+    
+    // Reset assertion
+    #10 rst = 1'b0;
+    
+    // Write data 1
+    #10 w_en = 1'b1;
+    data_in = 8'd1;
+    #10;
+    w_en = 1'b0;
+    $display("Write 1, Full: %b, Empty: %b", full, empty);
+    
+    // Write data 2
+    #10 w_en = 1'b1;
+    data_in = 8'd2;
+    #10;
+    w_en = 1'b0;
+    $display("Write 2, Full: %b, Empty: %b", full, empty);
+    
+    // Write data 3-8
+    #10 w_en = 1'b1; data_in = 8'd3; #10; w_en = 1'b0;
+    #10 w_en = 1'b1; data_in = 8'd4; #10; w_en = 1'b0;
+    #10 w_en = 1'b1; data_in = 8'd5; #10; w_en = 1'b0;
+    #10 w_en = 1'b1; data_in = 8'd6; #10; w_en = 1'b0;
+    #10 w_en = 1'b1; data_in = 8'd7; #10; w_en = 1'b0;
+    #10 w_en = 1'b1; data_in = 8'd8; #10; w_en = 1'b0;
+    $display("Write 3-8, Full: %b, Empty: %b", full, empty);
+    
+    // Read data 1
+    #10 r_en = 1'b1;
+    #10;
+    r_en = 1'b0;
+    $display("Read 1, Data: %d, Full: %b, Empty: %b", data_out, full, empty);
+    
+    // Read data 2-8
+    #10 r_en = 1'b1; #10; r_en = 1'b0;
+    #10 r_en = 1'b1; #10; r_en = 1'b0;
+    #10 r_en = 1'b1; #10; r_en = 1'b0;
+    #10 r_en = 1'b1; #10; r_en = 1'b0;
+    #10 r_en = 1'b1; #10; r_en = 1'b0;
+    #10 r_en = 1'b1; #10; r_en = 1'b0;
+    #10 r_en = 1'b1; #10; r_en = 1'b0;
+    $display("Read 2-8, Full: %b, Empty: %b", full, empty);
+    
+    // Overflow test
+    #10 w_en = 1'b1;
+    data_in = 8'd9;
+    #10;
+    $display("Overflow, Full: %b, Empty: %b", full, empty);
+    
+    // Underflow test
+    #10 r_en = 1'b1;
+    #10;
+    $display("Underflow, Full: %b, Empty: %b", full, empty);
+end
+
+endmodule
+```
+# Output
+![Screenshot 2025-05-05 155005](https://github.com/user-attachments/assets/888a5b0d-be33-4ff6-b47e-cfa17fed1f20)
 
 
 Conclusion
